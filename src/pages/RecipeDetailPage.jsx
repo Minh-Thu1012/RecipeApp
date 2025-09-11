@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axiosClient from '../api/axiosClient'
+import '../styles/recipe-detail.css'
 
 const RecipeDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [recipe, setRecipe] = useState(null)
+  const [relatedRecipes, setRelatedRecipes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [selectedImage, setSelectedImage] = useState(0)
 
   useEffect(() => {
     const fetchRecipe = async () => {
@@ -27,6 +30,11 @@ const RecipeDetailPage = () => {
         // Check if recipe is in favorites
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]')
         setIsFavorite(favorites.some(fav => fav.idMeal === recipeData.idMeal))
+
+        // Fetch related recipes by category
+        if (recipeData.strCategory) {
+          fetchRelatedRecipes(recipeData.strCategory, recipeData.idMeal)
+        }
       } catch (err) {
         setError('Failed to fetch recipe details')
         console.error('Recipe fetch error:', err)
@@ -39,6 +47,20 @@ const RecipeDetailPage = () => {
       fetchRecipe()
     }
   }, [id])
+
+  const fetchRelatedRecipes = async (category, currentId) => {
+    try {
+      const response = await axiosClient.get(`/filter.php?c=${encodeURIComponent(category)}`)
+      const allRecipes = response.data.meals || []
+      // Get 3 other recipes from the same category (excluding current recipe)
+      const related = allRecipes
+        .filter(recipe => recipe.idMeal !== currentId)
+        .slice(0, 3)
+      setRelatedRecipes(related)
+    } catch (err) {
+      console.error('Related recipes error:', err)
+    }
+  }
 
   const toggleFavorite = () => {
     if (!recipe) return
@@ -56,6 +78,21 @@ const RecipeDetailPage = () => {
       localStorage.setItem('favorites', JSON.stringify(updatedFavorites))
       setIsFavorite(true)
     }
+  }
+
+  const getImageGallery = (recipe) => {
+    const images = []
+    
+    // Only display images of the current recipe
+    if (recipe.strMealThumb) {
+      images.push({
+        src: recipe.strMealThumb,
+        alt: recipe.strMeal,
+        type: 'main'
+      })
+    }
+
+    return images
   }
 
   const getIngredients = (recipe) => {
@@ -105,6 +142,7 @@ const RecipeDetailPage = () => {
   }
 
   const ingredients = getIngredients(recipe)
+  const imageGallery = getImageGallery(recipe)
 
   return (
     <div className="recipe-detail-page">
@@ -113,12 +151,33 @@ const RecipeDetailPage = () => {
       </button>
 
       <div className="recipe-detail">
-        <div className="recipe-image-section">
-          <img 
-            src={recipe.strMealThumb} 
-            alt={recipe.strMeal}
-            className="recipe-detail-image"
-          />
+
+        <div className="recipe-gallery-section">
+          <div className="main-image-container">
+            <img 
+              src={imageGallery[selectedImage]?.src || recipe.strMealThumb} 
+              alt={imageGallery[selectedImage]?.alt || recipe.strMeal}
+              className="recipe-main-image"
+            />
+          </div>
+          
+          {imageGallery.length > 1 && (
+            <div className="gallery-thumbnails">
+              {imageGallery.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(index)}
+                  className={`thumbnail-button ${selectedImage === index ? 'active' : ''}`}
+                >
+                  <img 
+                    src={image.src} 
+                    alt={image.alt}
+                    className="thumbnail-image"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="recipe-content">
@@ -168,6 +227,25 @@ const RecipeDetailPage = () => {
               ))}
             </div>
           </div>
+
+
+          {relatedRecipes.length > 0 && (
+            <div className="related-recipes-section">
+              <h2>Related Recipes</h2>
+              <div className="related-recipes-grid">
+                {relatedRecipes.map((relatedRecipe) => (
+                  <div key={relatedRecipe.idMeal} className="related-recipe-card">
+                    <img 
+                      src={relatedRecipe.strMealThumb} 
+                      alt={relatedRecipe.strMeal}
+                      className="related-recipe-image"
+                    />
+                    <h4 className="related-recipe-title">{relatedRecipe.strMeal}</h4>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

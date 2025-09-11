@@ -10,7 +10,6 @@ const axiosClient = axios.create({
   },
 })
 
-// Request interceptor
 axiosClient.interceptors.request.use(
   (config) => {
     return config
@@ -20,12 +19,30 @@ axiosClient.interceptors.request.use(
   }
 )
 
-// Response interceptor
 axiosClient.interceptors.response.use(
   (response) => {
     return response
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config
+    
+    if (!originalRequest._retry && 
+        (error.code === 'NETWORK_ERROR' || 
+         error.code === 'ECONNABORTED' || 
+         (error.response && error.response.status >= 500))) {
+      
+      originalRequest._retry = true
+      
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      try {
+        return await axiosClient(originalRequest)
+      } catch (retryError) {
+        console.error('Retry failed:', retryError)
+        return Promise.reject(retryError)
+      }
+    }
+    
     console.error('API Error:', error)
     return Promise.reject(error)
   }

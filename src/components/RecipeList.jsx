@@ -1,4 +1,5 @@
 import RecipeCard from './RecipeCard'
+import PropTypes from 'prop-types'
 
 const RecipeList = ({ recipes, loading, error }) => {
   if (loading) {
@@ -33,6 +34,12 @@ const RecipeList = ({ recipes, loading, error }) => {
       ))}
     </div>
   )
+}
+
+RecipeList.propTypes = {
+  recipes: PropTypes.array.isRequired,
+  loading: PropTypes.bool.isRequired,
+  error: PropTypes.string
 }
 
 export default RecipeList

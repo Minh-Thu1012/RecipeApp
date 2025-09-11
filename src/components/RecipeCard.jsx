@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import PropTypes from 'prop-types'
+import '../styles/recipe-card.css'
 
 const RecipeCard = ({ recipe }) => {
   return (
@@ -17,6 +19,14 @@ const RecipeCard = ({ recipe }) => {
       </Link>
     </div>
   )
+}
+
+RecipeCard.propTypes = {
+  recipe: PropTypes.shape({
+    idMeal: PropTypes.string.isRequired,
+    strMeal: PropTypes.string.isRequired,
+    strMealThumb: PropTypes.string.isRequired
+  }).isRequired
 }
 
 export default RecipeCard
