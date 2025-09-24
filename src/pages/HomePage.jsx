@@ -19,7 +19,6 @@ const HomePage = () => {
         setIsSearchMode(false)
 
         try {
-            // Optimized loading: Use batch approach for faster loading
             const batchSize = 5
             const totalBatches = Math.ceil(20 / batchSize)
             let allRecipes = []
@@ -34,31 +33,25 @@ const HomePage = () => {
                     const batchRecipes = batchResponses.map(response => response.data.meals[0])
                     allRecipes = [...allRecipes, ...batchRecipes]
 
-                    // Remove duplicates after each batch
                     const uniqueRecipes = allRecipes.filter((recipe, index, self) =>
                         index === self.findIndex(r => r.idMeal === recipe.idMeal)
                     )
 
-                    // Update recipes progressively for better UX
                     setRecipes(uniqueRecipes.slice(0, 20))
 
-                    // If we have enough unique recipes, break early
                     if (uniqueRecipes.length >= 20) {
                         setLoading(false)
                         return
                     }
 
-                    // Small delay between batches to avoid overwhelming the server
                     if (batch < totalBatches - 1) {
                         await new Promise(resolve => setTimeout(resolve, 200))
                     }
                 } catch (batchErr) {
                     console.warn(`Batch ${batch + 1} failed:`, batchErr)
-                    // Continue with next batch even if one fails
                 }
             }
 
-            // Final cleanup and set recipes
             const finalUniqueRecipes = allRecipes.filter((recipe, index, self) =>
                 index === self.findIndex(r => r.idMeal === recipe.idMeal)
             )
@@ -72,7 +65,6 @@ const HomePage = () => {
         } catch (err) {
             console.error('Random recipes error:', err)
             
-            // Fallback: Try calling search API with popular keyword
             try {
                 const fallbackResponse = await axiosClient.get('/search.php?s=chicken')
                 setRecipes(fallbackResponse.data.meals || [])
@@ -134,7 +126,6 @@ const HomePage = () => {
     }
 
 
-    // Load random recipes and categories on component mount
     useEffect(() => {
         fetchRandomRecipes()
         fetchCategories()

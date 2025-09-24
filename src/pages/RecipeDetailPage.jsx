@@ -27,11 +27,9 @@ const RecipeDetailPage = () => {
 
         setRecipe(recipeData)
         
-        // Check if recipe is in favorites
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]')
         setIsFavorite(favorites.some(fav => fav.idMeal === recipeData.idMeal))
 
-        // Fetch related recipes by category
         if (recipeData.strCategory) {
           fetchRelatedRecipes(recipeData.strCategory, recipeData.idMeal)
         }
@@ -52,7 +50,7 @@ const RecipeDetailPage = () => {
     try {
       const response = await axiosClient.get(`/filter.php?c=${encodeURIComponent(category)}`)
       const allRecipes = response.data.meals || []
-      // Get 3 other recipes from the same category (excluding current recipe)
+
       const related = allRecipes
         .filter(recipe => recipe.idMeal !== currentId)
         .slice(0, 3)
@@ -68,12 +66,11 @@ const RecipeDetailPage = () => {
     const favorites = JSON.parse(localStorage.getItem('favorites') || '[]')
     
     if (isFavorite) {
-      // Remove from favorites
+
       const updatedFavorites = favorites.filter(fav => fav.idMeal !== recipe.idMeal)
       localStorage.setItem('favorites', JSON.stringify(updatedFavorites))
       setIsFavorite(false)
     } else {
-      // Add to favorites
       const updatedFavorites = [...favorites, recipe]
       localStorage.setItem('favorites', JSON.stringify(updatedFavorites))
       setIsFavorite(true)
@@ -83,7 +80,6 @@ const RecipeDetailPage = () => {
   const getImageGallery = (recipe) => {
     const images = []
     
-    // Only display images of the current recipe
     if (recipe.strMealThumb) {
       images.push({
         src: recipe.strMealThumb,
